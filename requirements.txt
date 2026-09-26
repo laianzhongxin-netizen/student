@@ -1,0 +1,4 @@
+Pillow>=10.0
+
+# Optional, only needed when the input contains PDF files.
+PyMuPDF>=1.23
