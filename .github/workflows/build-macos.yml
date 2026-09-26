@@ -1,0 +1,58 @@
+name: Build macOS app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller
+
+      - name: Prepare assets
+        run: |
+          mkdir -p assets
+          if [ -f tju_arch_logo.png ]; then cp tju_arch_logo.png assets/tju_arch_logo.png; fi
+          if [ -f zhihui_logo.png ]; then cp zhihui_logo.png assets/zhihui_logo.png; fi
+          test -f assets/tju_arch_logo.png
+          test -f assets/zhihui_logo.png
+
+      - name: Build app
+        run: |
+          pyinstaller --clean --noconfirm \
+            --windowed \
+            --name "学生绘图作业分析器" \
+            --add-data "assets:assets" \
+            --collect-all pymupdf \
+            --hidden-import fitz \
+            drawing_analyzer_gui.py
+
+      - name: Package app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "dist/学生绘图作业分析器.app" \
+            "学生绘图作业分析器-macOS.zip"
+
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-app
+          path: "学生绘图作业分析器-macOS.zip"
